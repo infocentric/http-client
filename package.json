@@ -1,0 +1,28 @@
+{
+  "name": "http-client",
+  "version": "0.1.0",
+  "main": "http.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "description": "Axios-based HTTP client",
+  "author": "Joel Poulin <joel.poulin@infocentric.ch>",
+  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/infocentric/http-client.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "promise.prototype.finally": "^3.1.0",
+    "hateoas-parser": "^0.9.0",
+    "lodash": "^4.17.11"
+  },
+  "devDependencies": {
+    "jest": "^22.1.1"
+  },
+  "jest": {
+    "collectCoverage": true
+  }
+}
