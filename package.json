@@ -1,6 +1,6 @@
 {
-  "name": "http-client",
-  "version": "0.1.0",
+  "name": "@infocentric/http-client",
+  "version": "0.1.1",
   "main": "http.js",
   "scripts": {
     "test": "jest"
@@ -16,7 +16,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "promise.prototype.finally": "^3.1.0",
-    "hateoas-parser": "^0.9.0",
+    "@infocentric/hateoas-parser": "^0.9.1",
     "lodash": "^4.17.11"
   },
   "devDependencies": {
