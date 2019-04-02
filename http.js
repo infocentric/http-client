@@ -1,7 +1,7 @@
 import Axios from 'axios'
 import AxiosFinally from 'promise.prototype.finally'
 import { parseLinks, getEndpoint as ge } from '@infocentric/hateoas-parser'
-import {transform, get, concat, uniq, isObject, toPairs, isFunction} from 'lodash'
+import { transform, get, concat, uniq, isObject, toPairs, isFunction } from 'lodash'
 
 const openBlob = function (blob, filename, forceDownload) {
   let url,
@@ -39,6 +39,29 @@ const openBlob = function (blob, filename, forceDownload) {
   }, 1000)
 }
 
+const getBinaryTransformResponse = () => {
+  return [function (resBlob) {
+    // try to decode the Blob content and parse it as JSON
+    // if it is JSON, that means it's an error and not an actual Blob result.
+    return new Promise((resolve, reject) => {
+      let reader = new FileReader()
+      reader.addEventListener('abort', reject)
+      reader.addEventListener('error', reject)
+      reader.addEventListener('loadend', () => {
+        resolve(reader.result)
+      })
+      reader.readAsText(resBlob)
+    })
+      .then(resText => {
+        try {
+          return JSON.parse(resText)
+        } catch (e) {
+          return resBlob
+        }
+      })
+  }]
+}
+
 const ExtendedAxios = {
   config: {
     cachebuster: {
@@ -71,6 +94,26 @@ const ExtendedAxios = {
         return response.data
       })
   },
+  _getBinary (url, axiosConfig) {
+    axiosConfig = axiosConfig || {}
+    axiosConfig.transformResponse = getBinaryTransformResponse()
+    return this.getEndpoint(url, Object.assign({}, (axiosConfig || {}), {responseType: 'blob'}))
+  },
+  downloadBinary (url, axiosConfig, filename = 'document.pdf') {
+    return this._getBinary(url, axiosConfig)
+      .then(response => {
+        openBlob(response, filename, true)
+      })
+  },
+  openBinary (url, axiosConfig, filename = 'document.pdf') {
+    return this._getBinary(url, axiosConfig)
+      .then(response => {
+        openBlob(response, filename)
+      })
+  }
+}
+
+const HateoasAxios = {
   loadIndex (endpoint) {
     return this.getEndpoint(endpoint)
   },
@@ -82,27 +125,8 @@ const ExtendedAxios = {
   },
   _getBinary (index, rel, params, axiosConfig, version) {
     axiosConfig = axiosConfig || {}
-      axiosConfig.transformResponse = [function (resBlob) {
-        // try to decode the Blob content and parse it as JSON
-        // if it is JSON, that means it's an error and not an actual Blob result.
-        return new Promise((resolve, reject) => {
-          let reader = new FileReader()
-          reader.addEventListener('abort', reject)
-          reader.addEventListener('error', reject)
-          reader.addEventListener('loadend', () => {
-            resolve(reader.result)
-          })
-          reader.readAsText(resBlob)
-        })
-          .then(resText => {
-            try {
-              return JSON.parse(resText)
-            } catch (e) {
-              return resBlob
-            }
-          })
-      }]
-      return this.followLink(index, rel, params, Object.assign({}, (axiosConfig || {}), {responseType: 'blob'}), version)
+    axiosConfig.transformResponse = getBinaryTransformResponse()
+    return this.followLink(index, rel, params, Object.assign({}, (axiosConfig || {}), {responseType: 'blob'}), version)
   },
   downloadBinary (index, rel, params, axiosConfig, version) {
     return this._getBinary(index, rel, params, axiosConfig, version)
@@ -117,59 +141,16 @@ const ExtendedAxios = {
         let filename = index.fileName || 'document.pdf'
         openBlob(response, filename)
       })
-  }
-}
-
-// shim the finally method
-AxiosFinally.shim()
-
-export default {
-
-  create (config) {
-    return Object.assign(Axios.create(config), ExtendedAxios)
-  },
-
-  createStandard (config) {
-    return this.create({
-      withCredentials: true,
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      baseURL: config.apiUri + config.apiBasePath
-    })
-  },
-
-  createWithHeaders (config, payload) {
-    let customHeaders = {}
-    if (config.headersMap) {
-      customHeaders = transform(config.headersMap, (acc, path, headerName) => {
-        let headerValue = get(payload, path)
-        if (headerValue) {
-          acc[headerName] = headerValue
-        }
-        return acc
-      }, {})
-    }
-    let headers = Object.assign({
-      'X-Requested-With': 'XMLHttpRequest'
-    }, customHeaders)
-
-    return this.create({
-      withCredentials: true,
-      headers: headers,
-      baseURL: config.apiUri + config.apiBasePath
-    })
   },
 
   /**
    * Loads all versions of an index endpoint and
    * create a versioned list of links
    *
-   * @param {Axios} http Axios configured instance
    * @param {String|Object} endpointDefinition One or several index endpoints
    * @returns {Promise}
    */
-  loadVersionedIndex (http, endpointDefinition) {
+  loadVersionedIndex (endpointDefinition) {
     if (!isObject(endpointDefinition)) {
       endpointDefinition = {
         default: endpointDefinition
@@ -179,7 +160,7 @@ export default {
     let promises = endpoints.map((ep) => {
       return {
         key: ep[0],
-        promise: http.loadIndex(ep[1])
+        promise: this.loadIndex(ep[1])
       }
     })
     return Axios.all(promises.map(ep => ep.promise))
@@ -215,3 +196,55 @@ export default {
       })
   }
 }
+
+// shim the finally method
+AxiosFinally.shim()
+
+// default library (without hateoas support)
+export const library = {
+
+  create (config) {
+    return Object.assign(Axios.create(config), ExtendedAxios)
+  },
+
+  createStandard (config) {
+    return this.create({
+      withCredentials: true,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      baseURL: config.apiUri + config.apiBasePath
+    })
+  },
+
+  createWithHeaders (config, payload) {
+    let customHeaders = {}
+    if (config.headersMap) {
+      customHeaders = transform(config.headersMap, (acc, path, headerName) => {
+        let headerValue = get(payload, path)
+        if (headerValue) {
+          acc[headerName] = headerValue
+        }
+        return acc
+      }, {})
+    }
+    let headers = Object.assign({
+      'X-Requested-With': 'XMLHttpRequest'
+    }, customHeaders)
+
+    return this.create({
+      withCredentials: true,
+      headers: headers,
+      baseURL: config.apiUri + config.apiBasePath
+    })
+  }
+}
+
+// library with hateoas support
+export const hateoasLibrary = Object.assign({}, library, {
+  create (config) {
+    return Object.assign(Axios.create(config), ExtendedAxios, HateoasAxios)
+  }
+})
+
+export default library
