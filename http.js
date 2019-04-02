@@ -201,50 +201,17 @@ const HateoasAxios = {
 AxiosFinally.shim()
 
 // default library (without hateoas support)
-export const library = {
-
+export const HttpClient = {
   create (config) {
     return Object.assign(Axios.create(config), ExtendedAxios)
-  },
-
-  createStandard (config) {
-    return this.create({
-      withCredentials: true,
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      baseURL: config.apiUri + config.apiBasePath
-    })
-  },
-
-  createWithHeaders (config, payload) {
-    let customHeaders = {}
-    if (config.headersMap) {
-      customHeaders = transform(config.headersMap, (acc, path, headerName) => {
-        let headerValue = get(payload, path)
-        if (headerValue) {
-          acc[headerName] = headerValue
-        }
-        return acc
-      }, {})
-    }
-    let headers = Object.assign({
-      'X-Requested-With': 'XMLHttpRequest'
-    }, customHeaders)
-
-    return this.create({
-      withCredentials: true,
-      headers: headers,
-      baseURL: config.apiUri + config.apiBasePath
-    })
   }
 }
 
 // library with hateoas support
-export const hateoasLibrary = Object.assign({}, library, {
+export const HateoasHttpClient = Object.assign({}, library, {
   create (config) {
     return Object.assign(Axios.create(config), ExtendedAxios, HateoasAxios)
   }
 })
 
-export default library
+export default HttpClient

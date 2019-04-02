@@ -24,5 +24,6 @@
   },
   "jest": {
     "collectCoverage": true
-  }
+  },
+  "typings": "./index.d.ts"
 }
