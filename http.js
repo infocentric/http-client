@@ -208,7 +208,7 @@ export const HttpClient = {
 }
 
 // library with hateoas support
-export const HateoasHttpClient = Object.assign({}, library, {
+export const HateoasHttpClient = Object.assign({}, HttpClient, {
   create (config) {
     return Object.assign(Axios.create(config), ExtendedAxios, HateoasAxios)
   }
