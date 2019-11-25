@@ -75,6 +75,11 @@ const ExtendedAxios = {
     this.config.cachebuster.methods = methods
   },
 
+  removeCacheBuster () {
+    this.config.cachebuster.callback = null
+    this.config.cachebuster.methods = []
+  },
+
   getEndpoint (url, axiosConfig) {
     let finalConfig = Object.assign({
       method: 'GET',
