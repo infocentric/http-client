@@ -11,8 +11,9 @@ export type extendedAxiosConfig = {
 
 export interface ExtendedAxiosInstance extends AxiosInstance {
   config: extendedAxiosConfig
-  setCacheBuster(callback: Function, methods?: string[]):void
-  getEndpoint(url: string, config: AxiosRequestConfig):Promise<any>
+  setCacheBuster(callback: Function|null, methods?: string[]):void
+  removeCacheBuster():void
+  getEndpoint(url: string, config?: AxiosRequestConfig):Promise<any>
   downloadBinary(url: string, config?: AxiosRequestConfig, name?: string):Promise<any>
   openBinary(url: string, config?: AxiosRequestConfig, name?: string):Promise<any>
 }
