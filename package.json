@@ -1,6 +1,6 @@
 {
   "name": "@infocentric/http-client",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "main": "http.js",
   "module": "http.js",
   "description": "Axios-based HTTP client",
@@ -12,7 +12,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "promise.prototype.finally": "^3.1.0",
     "@infocentric/hateoas-parser": "^1.0.0",
     "lodash-es": "^4.17.15"
